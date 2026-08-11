@@ -1,0 +1,162 @@
+// Esquema Fase 1 — Gestor de Proyectos, Agenda, Cumpleaños y Pagos
+// Provider MySQL (Hostinger), igual que tus otros proyectos.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Usuario ----------
+
+model Usuario {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  nombre    String?
+  createdAt DateTime @default(now())
+
+  proyectos    Proyecto[]
+  citas        Cita[]
+  cumpleanios  Cumpleanio[]
+  pagos        Pago[]
+}
+
+// ---------- Proyectos ----------
+
+enum EstadoProyecto {
+  ACTIVO
+  PAUSADO
+  COMPLETADO
+  CANCELADO
+}
+
+enum Periodicidad {
+  UNICA
+  QUINCENAL
+  MENSUAL
+}
+
+enum TipoSeguimiento {
+  ESTADO      // check de 3 posiciones: pendiente / proceso / completado
+  PORCENTAJE  // slider 0-100
+}
+
+enum EstadoOcurrencia {
+  PENDIENTE
+  PROCESO
+  COMPLETADO
+}
+
+model Proyecto {
+  id           String         @id @default(cuid())
+  nombre       String
+  tipo         String?        // etiqueta libre (ej. "Publicidad", "Trámite", "Web")
+  fechaInicio  DateTime
+  fechaFin     DateTime
+  estado       EstadoProyecto @default(ACTIVO)
+  usuarioId    String
+  usuario      Usuario        @relation(fields: [usuarioId], references: [id])
+  actividades  Actividad[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([usuarioId])
+}
+
+model Actividad {
+  id               String            @id @default(cuid())
+  proyectoId       String
+  proyecto         Proyecto          @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  nombre           String
+  descripcion      String?
+  duracion         Int?
+  unidadDuracion   String?           // "Hora", "Día"
+  periodicidad     Periodicidad      @default(UNICA)
+  hora             String?           // hora sugerida, formato HH:mm
+  fechaInicio      DateTime
+  fechaFin         DateTime
+  tipoSeguimiento  TipoSeguimiento   @default(ESTADO)
+
+  // Dependencias simples Fin->Inicio (se activa en Fase 2, el campo ya queda listo)
+  predecesoraId    String?
+  predecesora      Actividad?        @relation("Dependencia", fields: [predecesoraId], references: [id])
+  dependientes     Actividad[]       @relation("Dependencia")
+
+  ocurrencias      OcurrenciaActividad[]
+  createdAt        DateTime          @default(now())
+
+  @@index([proyectoId])
+}
+
+model OcurrenciaActividad {
+  id            String           @id @default(cuid())
+  actividadId   String
+  actividad     Actividad        @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  fecha         DateTime
+  estado        EstadoOcurrencia @default(PENDIENTE)
+  porcentaje    Int?             // usado solo si tipoSeguimiento = PORCENTAJE
+  nota          String?
+  completadoEn  DateTime?
+
+  @@index([actividadId])
+  @@index([fecha])
+}
+
+// ---------- Agenda / Citas ----------
+
+model Cita {
+  id          String   @id @default(cuid())
+  titulo      String
+  fecha       DateTime
+  hora        String?
+  lugar       String?
+  descripcion String?
+  recurrente  Boolean  @default(false)
+  usuarioId   String
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([usuarioId])
+  @@index([fecha])
+}
+
+// ---------- Cumpleaños ----------
+
+model Cumpleanio {
+  id        String   @id @default(cuid())
+  nombre    String
+  fecha     DateTime // se usa día/mes; el año se recalcula en la app
+  notas     String?
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([usuarioId])
+}
+
+// ---------- Pagos ----------
+
+enum EstadoPago {
+  PENDIENTE
+  PAGADO
+  VENCIDO
+}
+
+model Pago {
+  id                String       @id @default(cuid())
+  concepto          String
+  monto             Float?
+  fechaVencimiento  DateTime
+  periodicidad      Periodicidad @default(UNICA)
+  estado            EstadoPago   @default(PENDIENTE)
+  usuarioId         String
+  usuario           Usuario      @relation(fields: [usuarioId], references: [id])
+  createdAt         DateTime     @default(now())
+
+  @@index([usuarioId])
+  @@index([fechaVencimiento])
+}

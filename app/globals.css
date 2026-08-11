@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Fraunces", serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+body {
+  @apply bg-noche-50 text-noche-900;
+}
+
+/* Botón de estado de 3 posiciones — el elemento firma de la app.
+   Un solo tap para pasar de pendiente -> proceso -> completado. */
+.estado-dot {
+  @apply w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors;
+}
+.estado-dot[data-estado="PENDIENTE"] {
+  @apply bg-white border-noche-100;
+}
+.estado-dot[data-estado="PROCESO"] {
+  @apply bg-ambar-100 border-ambar-400;
+}
+.estado-dot[data-estado="COMPLETADO"] {
+  @apply bg-salvia-400 border-salvia-600;
+}
