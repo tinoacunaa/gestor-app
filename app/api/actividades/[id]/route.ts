@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { parseISO } from "date-fns";
 import { generarFechasOcurrencia } from "@/lib/ocurrencias";
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
@@ -14,7 +15,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const fechaFin = parseISO(body.fechaFin);
 
   const actividad = await prisma.actividad.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       nombre: body.nombre,
       descripcion: body.descripcion || null,
@@ -41,10 +42,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   return NextResponse.json(actividad);
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  await prisma.actividad.delete({ where: { id: params.id } });
+  await prisma.actividad.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

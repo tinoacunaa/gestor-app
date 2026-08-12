@@ -14,14 +14,15 @@ import {
 import { es } from "date-fns/locale";
 import CalendarioGrid, { EventoCalendario } from "@/components/CalendarioGrid";
 
-export default async function CalendarioPage({ searchParams }: { searchParams: { mes?: string } }) {
+export default async function CalendarioPage({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
+  const { mes } = await searchParams;
   const session = await getServerSession(authOptions);
   const usuarioId = (session!.user as any).id;
 
   // parseISO respeta la fecha local (1 de septiembre = 1 de septiembre).
   // new Date("2026-09-01") en cambio la lee como UTC y en Perú (UTC-5)
   // se corre al 31 de agosto — el mismo bug que ya resolviste en la app de la parroquia.
-  const mesBase = searchParams.mes ? parseISO(`${searchParams.mes}-01`) : new Date();
+  const mesBase = mes ? parseISO(`${mes}-01`) : new Date();
   const inicioMes = startOfMonth(mesBase);
   const finMes = endOfMonth(mesBase);
   const inicioGrid = startOfWeek(inicioMes, { weekStartsOn: 1 });
@@ -43,7 +44,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: {
     (eventosPorDia[iso] ||= []).push(ev);
   };
 
-  ocurrencias.forEach((o) =>
+  ocurrencias.forEach((o: (typeof ocurrencias)[number]) =>
     push(format(o.fecha, "yyyy-MM-dd"), {
       id: o.id,
       tipo: "PROYECTO",
@@ -51,11 +52,13 @@ export default async function CalendarioPage({ searchParams }: { searchParams: {
       proyecto: o.actividad.proyecto.nombre,
     })
   );
-  citas.forEach((c) => push(format(c.fecha, "yyyy-MM-dd"), { id: c.id, tipo: "CITA", titulo: c.titulo }));
-  pagos.forEach((p) =>
+  citas.forEach((c: (typeof citas)[number]) =>
+    push(format(c.fecha, "yyyy-MM-dd"), { id: c.id, tipo: "CITA", titulo: c.titulo })
+  );
+  pagos.forEach((p: (typeof pagos)[number]) =>
     push(format(p.fechaVencimiento, "yyyy-MM-dd"), { id: p.id, tipo: "PAGO", titulo: p.concepto })
   );
-  cumpleanios.forEach((c) => {
+  cumpleanios.forEach((c: (typeof cumpleanios)[number]) => {
     const f = new Date(c.fecha);
     if (f.getMonth() === mesBase.getMonth()) {
       const iso = format(new Date(mesBase.getFullYear(), f.getMonth(), f.getDate()), "yyyy-MM-dd");

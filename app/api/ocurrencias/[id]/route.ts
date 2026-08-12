@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
@@ -17,7 +18,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (body.nota !== undefined) data.nota = body.nota;
 
   const ocurrencia = await prisma.ocurrenciaActividad.update({
-    where: { id: params.id },
+    where: { id },
     data,
   });
   return NextResponse.json(ocurrencia);

@@ -6,9 +6,10 @@ import NuevaActividadForm from "@/components/NuevaActividadForm";
 import EditarProyectoForm from "@/components/EditarProyectoForm";
 import ActividadItem from "@/components/ActividadItem";
 
-export default async function ProyectoDetallePage({ params }: { params: { id: string } }) {
+export default async function ProyectoDetallePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const proyecto = await prisma.proyecto.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       actividades: {
         include: { ocurrencias: { orderBy: { fecha: "asc" } }, predecesora: true },

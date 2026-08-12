@@ -4,13 +4,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseISO } from "date-fns";
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const body = await req.json();
   const cumpleanio = await prisma.cumpleanio.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       nombre: body.nombre,
       fecha: parseISO(body.fecha),
@@ -20,10 +21,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   return NextResponse.json(cumpleanio);
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  await prisma.cumpleanio.delete({ where: { id: params.id } });
+  await prisma.cumpleanio.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }
