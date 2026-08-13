@@ -2,8 +2,7 @@
 // Provider MySQL (Hostinger), igual que tus otros proyectos.
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -97,7 +96,8 @@ model OcurrenciaActividad {
   id            String           @id @default(cuid())
   actividadId   String
   actividad     Actividad        @relation(fields: [actividadId], references: [id], onDelete: Cascade)
-  fecha         DateTime
+  fecha         DateTime         // inicio del ciclo (ej. el día 19)
+  fechaFin      DateTime?        // fin del ciclo (ej. el día 22); null o igual a `fecha` si dura 1 día
   estado        EstadoOcurrencia @default(PENDIENTE)
   porcentaje    Int?             // usado solo si tipoSeguimiento = PORCENTAJE
   nota          String?

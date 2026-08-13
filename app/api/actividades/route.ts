@@ -15,6 +15,11 @@ export async function POST(req: Request) {
   const fechaInicio = parseISO(body.fechaInicio);
   const fechaFin = parseISO(body.fechaFin);
 
+  // La fechaFin del PROYECTO es la que manda para saber hasta cuándo se
+  // repiten las ocurrencias de una actividad quincenal/mensual.
+  const proyecto = await prisma.proyecto.findUnique({ where: { id: body.proyectoId } });
+  if (!proyecto) return NextResponse.json({ error: "Proyecto no encontrado" }, { status: 404 });
+
   const actividad = await prisma.actividad.create({
     data: {
       proyectoId: body.proyectoId,
@@ -31,11 +36,12 @@ export async function POST(req: Request) {
     },
   });
 
-  // Genera automáticamente todas las ocurrencias del rango: esto es lo que
-  // evita que el usuario tenga que "recrear" la tarea cada quincena/mes.
-  const fechas = generarFechasOcurrencia(actividad.periodicidad, fechaInicio, fechaFin);
+  // Genera automáticamente todos los ciclos (inicio/fin) hasta la fechaFin
+  // del proyecto: esto es lo que evita que el usuario tenga que "recrear"
+  // la tarea cada quincena/mes.
+  const ciclos = generarFechasOcurrencia(actividad.periodicidad, fechaInicio, fechaFin, proyecto.fechaFin);
   await prisma.ocurrenciaActividad.createMany({
-    data: fechas.map((fecha) => ({ actividadId: actividad.id, fecha })),
+    data: ciclos.map((c) => ({ actividadId: actividad.id, fecha: c.fecha, fechaFin: c.fechaFin })),
   });
 
   return NextResponse.json(actividad, { status: 201 });

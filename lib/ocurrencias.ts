@@ -1,34 +1,47 @@
-import { addDays, addMonths, isAfter, isEqual } from "date-fns";
+import { addDays, addMonths, differenceInCalendarDays, isAfter } from "date-fns";
 import { Periodicidad } from "@prisma/client";
 
+export type CicloOcurrencia = {
+  fecha: Date; // inicio del ciclo
+  fechaFin: Date; // fin del ciclo (igual a fecha si dura 1 día)
+};
+
 /**
- * Genera las fechas de ocurrencia de una actividad según su periodicidad.
- * - UNICA: una sola ocurrencia en fechaInicio.
- * - QUINCENAL: una cada 15 días entre fechaInicio y fechaFin.
- * - MENSUAL: una por mes (mismo día que fechaInicio) entre fechaInicio y fechaFin.
+ * Genera los ciclos de ocurrencia de una actividad según su periodicidad.
  *
- * Esto es lo que permite que el usuario configure la actividad UNA vez
- * y el sistema arme todo el calendario de "checks" automáticamente.
+ * - fechaInicioActividad / fechaFinActividad definen la VENTANA que se repite
+ *   (ej. empieza el 19, termina el 22 → un ciclo de 4 días). Esa misma duración
+ *   se mantiene en cada repetición.
+ * - fechaFinProyecto es el límite: se sigue generando un nuevo ciclo mientras
+ *   su fecha de inicio no supere la fecha de fin del proyecto.
+ *
+ * - UNICA: un solo ciclo, con la ventana tal cual (fechaInicioActividad → fechaFinActividad).
+ * - QUINCENAL: un ciclo cada 15 días desde fechaInicioActividad.
+ * - MENSUAL: un ciclo cada mes (mismo día) desde fechaInicioActividad.
  */
 export function generarFechasOcurrencia(
   periodicidad: Periodicidad,
-  fechaInicio: Date,
-  fechaFin: Date
-): Date[] {
-  const fechas: Date[] = [];
+  fechaInicioActividad: Date,
+  fechaFinActividad: Date,
+  fechaFinProyecto: Date
+): CicloOcurrencia[] {
+  const ciclos: CicloOcurrencia[] = [];
+  const duracionDias = differenceInCalendarDays(fechaFinActividad, fechaInicioActividad);
 
   if (periodicidad === "UNICA") {
-    fechas.push(fechaInicio);
-    return fechas;
+    ciclos.push({ fecha: fechaInicioActividad, fechaFin: fechaFinActividad });
+    return ciclos;
   }
 
-  let actual = fechaInicio;
-  const paso = periodicidad === "QUINCENAL" ? (d: Date) => addDays(d, 15) : (d: Date) => addMonths(d, 1);
+  const avanzar = periodicidad === "QUINCENAL" ? (d: Date) => addDays(d, 15) : (d: Date) => addMonths(d, 1);
 
-  while (isAfter(fechaFin, actual) || isEqual(actual, fechaFin)) {
-    fechas.push(actual);
-    actual = paso(actual);
+  let inicioCiclo = fechaInicioActividad;
+  // Se sigue generando mientras el INICIO del ciclo no supere la fechaFin del proyecto.
+  while (!isAfter(inicioCiclo, fechaFinProyecto)) {
+    const finCiclo = addDays(inicioCiclo, duracionDias);
+    ciclos.push({ fecha: inicioCiclo, fechaFin: finCiclo });
+    inicioCiclo = avanzar(inicioCiclo);
   }
 
-  return fechas;
+  return ciclos;
 }

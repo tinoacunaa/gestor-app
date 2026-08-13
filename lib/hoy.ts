@@ -7,14 +7,20 @@ export async function getDatosHoy(usuarioId: string) {
   const fin = endOfDay(hoy);
 
   const [ocurrenciasHoy, ocurrenciasAtrasadas, citasHoy, pagosPendientes, cumpleanios] = await Promise.all([
+    // "De hoy" = el día de hoy cae dentro del ciclo [fecha, fechaFin].
     prisma.ocurrenciaActividad.findMany({
-      where: { fecha: { gte: inicio, lte: fin }, actividad: { proyecto: { usuarioId } } },
+      where: {
+        fecha: { lte: fin },
+        OR: [{ fechaFin: { gte: inicio } }, { fechaFin: null, fecha: { gte: inicio } }],
+        actividad: { proyecto: { usuarioId } },
+      },
       include: { actividad: { include: { proyecto: true } } },
       orderBy: { fecha: "asc" },
     }),
+    // "Atrasada" = el ciclo ya terminó (fechaFin, o fecha si dura 1 día) antes de hoy y sigue sin completarse.
     prisma.ocurrenciaActividad.findMany({
       where: {
-        fecha: { lt: inicio },
+        OR: [{ fechaFin: { lt: inicio } }, { fechaFin: null, fecha: { lt: inicio } }],
         estado: { not: "COMPLETADO" },
         actividad: { proyecto: { usuarioId } },
       },

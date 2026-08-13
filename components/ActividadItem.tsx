@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import EstadoToggle from "@/components/EstadoToggle";
 
-type Ocurrencia = { id: string; fecha: Date | string; estado: string };
+type Ocurrencia = { id: string; fecha: Date | string; fechaFin?: Date | string | null; estado: string };
 type Actividad = {
   id: string;
   nombre: string;
@@ -154,12 +154,21 @@ export default function ActividadItem({
         <p className="text-xs text-noche-400 mb-2">Depende de: {actividad.predecesora.nombre}</p>
       )}
       <div className="flex flex-wrap gap-2">
-        {actividad.ocurrencias.map((o) => (
-          <div key={o.id} className="flex items-center gap-1.5">
-            <EstadoToggle ocurrenciaId={o.id} estadoInicial={o.estado as any} />
-            <span className="text-[11px] text-noche-400">{format(new Date(o.fecha), "d MMM", { locale: es })}</span>
-          </div>
-        ))}
+        {actividad.ocurrencias.map((o) => {
+          const inicio = new Date(o.fecha);
+          const fin = o.fechaFin ? new Date(o.fechaFin) : inicio;
+          const mismoDia = format(inicio, "yyyy-MM-dd") === format(fin, "yyyy-MM-dd");
+          return (
+            <div key={o.id} className="flex items-center gap-1.5">
+              <EstadoToggle ocurrenciaId={o.id} estadoInicial={o.estado as any} />
+              <span className="text-[11px] text-noche-400">
+                {mismoDia
+                  ? format(inicio, "d MMM", { locale: es })
+                  : `${format(inicio, "d MMM", { locale: es })} – ${format(fin, "d MMM", { locale: es })}`}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

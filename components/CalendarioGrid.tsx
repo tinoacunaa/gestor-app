@@ -8,6 +8,7 @@ export type EventoCalendario = {
   tipo: "PROYECTO" | "CITA" | "CUMPLEANOS" | "PAGO";
   titulo: string;
   proyecto?: string;
+  marcador?: "INICIO" | "FIN"; // solo aplica a tipo PROYECTO (actividades con rango)
 };
 
 const TIPOS: { key: EventoCalendario["tipo"]; label: string; dot: string; text: string; bg: string }[] = [
@@ -82,8 +83,14 @@ export default function CalendarioGrid({
               <div className="space-y-0.5">
                 {eventos.slice(0, 3).map((e) => {
                   const t = TIPOS.find((x) => x.key === e.tipo)!;
+                  const prefijo = e.marcador === "INICIO" ? "▶ " : e.marcador === "FIN" ? "■ " : "";
                   return (
-                    <div key={e.id} className={`text-[10px] truncate rounded px-1 ${t.bg} ${t.text}`}>
+                    <div
+                      key={`${e.id}-${e.marcador || ""}`}
+                      className={`text-[10px] truncate rounded px-1 ${t.bg} ${t.text}`}
+                      title={e.marcador === "INICIO" ? "Inicio" : e.marcador === "FIN" ? "Fin" : undefined}
+                    >
+                      {prefijo}
                       {e.titulo}
                     </div>
                   );

@@ -15,14 +15,14 @@ import { es } from "date-fns/locale";
 import CalendarioGrid, { EventoCalendario } from "@/components/CalendarioGrid";
 
 export default async function CalendarioPage({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
-  const { mes } = await searchParams;
+  const sp = await searchParams;
   const session = await getServerSession(authOptions);
   const usuarioId = (session!.user as any).id;
 
   // parseISO respeta la fecha local (1 de septiembre = 1 de septiembre).
   // new Date("2026-09-01") en cambio la lee como UTC y en Perú (UTC-5)
   // se corre al 31 de agosto — el mismo bug que ya resolviste en la app de la parroquia.
-  const mesBase = mes ? parseISO(`${mes}-01`) : new Date();
+  const mesBase = sp.mes ? parseISO(`${sp.mes}-01`) : new Date();
   const inicioMes = startOfMonth(mesBase);
   const finMes = endOfMonth(mesBase);
   const inicioGrid = startOfWeek(inicioMes, { weekStartsOn: 1 });
@@ -30,8 +30,14 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
   const dias = eachDayOfInterval({ start: inicioGrid, end: finGrid });
 
   const [ocurrencias, citas, pagos, cumpleanios] = await Promise.all([
+    // Un ciclo puede empezar en un mes y terminar en el siguiente, así que se
+    // trae si su rango [fecha, fechaFin] se solapa con el rango visible del grid.
     prisma.ocurrenciaActividad.findMany({
-      where: { fecha: { gte: inicioGrid, lte: finGrid }, actividad: { proyecto: { usuarioId } } },
+      where: {
+        fecha: { lte: finGrid },
+        OR: [{ fechaFin: { gte: inicioGrid } }, { fechaFin: null, fecha: { gte: inicioGrid } }],
+        actividad: { proyecto: { usuarioId } },
+      },
       include: { actividad: { include: { proyecto: true } } },
     }),
     prisma.cita.findMany({ where: { usuarioId, fecha: { gte: inicioGrid, lte: finGrid } } }),
@@ -44,21 +50,33 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
     (eventosPorDia[iso] ||= []).push(ev);
   };
 
-  ocurrencias.forEach((o: (typeof ocurrencias)[number]) =>
+  ocurrencias.forEach((o) => {
+    const finCiclo = o.fechaFin || o.fecha;
+    const mismoDia = format(o.fecha, "yyyy-MM-dd") === format(finCiclo, "yyyy-MM-dd");
+
     push(format(o.fecha, "yyyy-MM-dd"), {
       id: o.id,
       tipo: "PROYECTO",
       titulo: o.actividad.nombre,
       proyecto: o.actividad.proyecto.nombre,
-    })
-  );
-  citas.forEach((c: (typeof citas)[number]) =>
-    push(format(c.fecha, "yyyy-MM-dd"), { id: c.id, tipo: "CITA", titulo: c.titulo })
-  );
-  pagos.forEach((p: (typeof pagos)[number]) =>
+      marcador: mismoDia ? undefined : "INICIO",
+    });
+
+    if (!mismoDia) {
+      push(format(finCiclo, "yyyy-MM-dd"), {
+        id: o.id,
+        tipo: "PROYECTO",
+        titulo: o.actividad.nombre,
+        proyecto: o.actividad.proyecto.nombre,
+        marcador: "FIN",
+      });
+    }
+  });
+  citas.forEach((c) => push(format(c.fecha, "yyyy-MM-dd"), { id: c.id, tipo: "CITA", titulo: c.titulo }));
+  pagos.forEach((p) =>
     push(format(p.fechaVencimiento, "yyyy-MM-dd"), { id: p.id, tipo: "PAGO", titulo: p.concepto })
   );
-  cumpleanios.forEach((c: (typeof cumpleanios)[number]) => {
+  cumpleanios.forEach((c) => {
     const f = new Date(c.fecha);
     if (f.getMonth() === mesBase.getMonth()) {
       const iso = format(new Date(mesBase.getFullYear(), f.getMonth(), f.getDate()), "yyyy-MM-dd");
