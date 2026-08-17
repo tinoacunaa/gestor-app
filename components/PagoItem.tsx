@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { soloFecha } from "@/lib/fecha";
 
 type Pago = {
   id: string;
@@ -20,7 +21,7 @@ export default function PagoItem({ pago }: { pago: Pago }) {
   const [form, setForm] = useState({
     concepto: pago.concepto,
     monto: pago.monto?.toString() || "",
-    fechaVencimiento: format(new Date(pago.fechaVencimiento), "yyyy-MM-dd"),
+    fechaVencimiento: format(soloFecha(pago.fechaVencimiento), "yyyy-MM-dd"),
     periodicidad: pago.periodicidad,
   });
 
@@ -104,7 +105,7 @@ export default function PagoItem({ pago }: { pago: Pago }) {
       <div className="min-w-0">
         <p className="text-sm font-medium truncate">{pago.concepto}</p>
         <p className="text-xs text-noche-400">
-          {format(new Date(pago.fechaVencimiento), "d MMM yyyy", { locale: es })} {pago.monto ? `· S/ ${pago.monto}` : ""}
+          {format(soloFecha(pago.fechaVencimiento), "d MMM yyyy", { locale: es })} {pago.monto ? `· S/ ${pago.monto}` : ""}
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">

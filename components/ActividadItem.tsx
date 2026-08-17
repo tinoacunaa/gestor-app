@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { soloFecha } from "@/lib/fecha";
 import EstadoToggle from "@/components/EstadoToggle";
 
 type Ocurrencia = { id: string; fecha: Date | string; fechaFin?: Date | string | null; estado: string };
@@ -31,8 +32,8 @@ export default function ActividadItem({
   const [form, setForm] = useState({
     nombre: actividad.nombre,
     periodicidad: actividad.periodicidad,
-    fechaInicio: format(new Date(actividad.fechaInicio), "yyyy-MM-dd"),
-    fechaFin: format(new Date(actividad.fechaFin), "yyyy-MM-dd"),
+    fechaInicio: format(soloFecha(actividad.fechaInicio), "yyyy-MM-dd"),
+    fechaFin: format(soloFecha(actividad.fechaFin), "yyyy-MM-dd"),
     hora: actividad.hora || "",
     tipoSeguimiento: actividad.tipoSeguimiento,
     predecesoraId: actividad.predecesora?.id || "",
@@ -155,8 +156,8 @@ export default function ActividadItem({
       )}
       <div className="flex flex-wrap gap-2">
         {actividad.ocurrencias.map((o) => {
-          const inicio = new Date(o.fecha);
-          const fin = o.fechaFin ? new Date(o.fechaFin) : inicio;
+          const inicio = soloFecha(o.fecha);
+          const fin = o.fechaFin ? soloFecha(o.fechaFin) : inicio;
           const mismoDia = format(inicio, "yyyy-MM-dd") === format(fin, "yyyy-MM-dd");
           return (
             <div key={o.id} className="flex items-center gap-1.5">

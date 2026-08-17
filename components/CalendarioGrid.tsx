@@ -9,6 +9,14 @@ export type EventoCalendario = {
   titulo: string;
   proyecto?: string;
   marcador?: "INICIO" | "FIN"; // solo aplica a tipo PROYECTO (actividades con rango)
+  detalle?: {
+    rango?: string; // fecha (o rango de fechas) ya formateada, calculada en el servidor
+    hora?: string | null;
+    lugar?: string | null;
+    descripcion?: string | null;
+    estado?: string;
+    monto?: number | null;
+  };
 };
 
 const TIPOS: { key: EventoCalendario["tipo"]; label: string; dot: string; text: string; bg: string }[] = [
@@ -34,6 +42,7 @@ export default function CalendarioGrid({
   const [activos, setActivos] = useState<Set<EventoCalendario["tipo"]>>(
     new Set(TIPOS.map((t) => t.key))
   );
+  const [seleccionado, setSeleccionado] = useState<EventoCalendario | null>(null);
 
   function alternar(tipo: EventoCalendario["tipo"]) {
     setActivos((prev) => {
@@ -85,14 +94,15 @@ export default function CalendarioGrid({
                   const t = TIPOS.find((x) => x.key === e.tipo)!;
                   const prefijo = e.marcador === "INICIO" ? "▶ " : e.marcador === "FIN" ? "■ " : "";
                   return (
-                    <div
+                    <button
                       key={`${e.id}-${e.marcador || ""}`}
-                      className={`text-[10px] truncate rounded px-1 ${t.bg} ${t.text}`}
+                      onClick={() => setSeleccionado(e)}
+                      className={`w-full text-left text-[10px] truncate rounded px-1 ${t.bg} ${t.text}`}
                       title={e.marcador === "INICIO" ? "Inicio" : e.marcador === "FIN" ? "Fin" : undefined}
                     >
                       {prefijo}
                       {e.titulo}
-                    </div>
+                    </button>
                   );
                 })}
                 {eventos.length > 3 && (
@@ -103,6 +113,49 @@ export default function CalendarioGrid({
           );
         })}
       </div>
+
+      {seleccionado && (
+        <div
+          className="fixed inset-0 bg-noche-900/40 flex items-end md:items-center justify-center z-50 p-0 md:p-4"
+          onClick={() => setSeleccionado(null)}
+        >
+          <div
+            className="bg-white rounded-t-2xl md:rounded-2xl p-5 w-full md:max-w-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {(() => {
+              const t = TIPOS.find((x) => x.key === seleccionado.tipo)!;
+              const d = seleccionado.detalle;
+              return (
+                <>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className={`w-1.5 h-1.5 rounded-full ${t.dot}`} />
+                    <span className={`text-xs ${t.text}`}>{t.label.replace(/s$/, "")}</span>
+                  </div>
+                  <h2 className="font-display text-lg mb-1">{seleccionado.titulo}</h2>
+                  {seleccionado.proyecto && (
+                    <p className="text-xs text-noche-400 mb-2">{seleccionado.proyecto}</p>
+                  )}
+                  <div className="space-y-1 text-sm text-noche-600">
+                    {d?.rango && <p>📅 {d.rango}</p>}
+                    {d?.hora && <p>🕒 {d.hora}</p>}
+                    {d?.lugar && <p>📍 {d.lugar}</p>}
+                    {typeof d?.monto === "number" && <p>💵 S/ {d.monto}</p>}
+                    {d?.estado && <p>Estado: {d.estado.charAt(0) + d.estado.slice(1).toLowerCase()}</p>}
+                    {d?.descripcion && <p className="text-noche-400">{d.descripcion}</p>}
+                  </div>
+                  <button
+                    onClick={() => setSeleccionado(null)}
+                    className="w-full mt-4 border border-noche-100 rounded-lg py-2 text-sm"
+                  >
+                    Cerrar
+                  </button>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

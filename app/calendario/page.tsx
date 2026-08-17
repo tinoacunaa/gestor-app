@@ -36,7 +36,10 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
       where: {
         fecha: { lte: finGrid },
         OR: [{ fechaFin: { gte: inicioGrid } }, { fechaFin: null, fecha: { gte: inicioGrid } }],
-        actividad: { proyecto: { usuarioId } },
+        // No mostrar la ocurrencia si ya se completó, ni si el proyecto al
+        // que pertenece está completado o cancelado.
+        estado: { not: "COMPLETADO" },
+        actividad: { proyecto: { usuarioId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
       },
       include: { actividad: { include: { proyecto: true } } },
     }),
@@ -53,6 +56,16 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
   ocurrencias.forEach((o) => {
     const finCiclo = o.fechaFin || o.fecha;
     const mismoDia = format(o.fecha, "yyyy-MM-dd") === format(finCiclo, "yyyy-MM-dd");
+    const rango = mismoDia
+      ? format(o.fecha, "d 'de' MMMM", { locale: es })
+      : `${format(o.fecha, "d MMM", { locale: es })} – ${format(finCiclo, "d MMM yyyy", { locale: es })}`;
+
+    const detalle = {
+      rango,
+      hora: o.actividad.hora,
+      descripcion: o.actividad.descripcion,
+      estado: o.estado,
+    };
 
     push(format(o.fecha, "yyyy-MM-dd"), {
       id: o.id,
@@ -60,6 +73,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
       titulo: o.actividad.nombre,
       proyecto: o.actividad.proyecto.nombre,
       marcador: mismoDia ? undefined : "INICIO",
+      detalle,
     });
 
     if (!mismoDia) {
@@ -69,18 +83,46 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
         titulo: o.actividad.nombre,
         proyecto: o.actividad.proyecto.nombre,
         marcador: "FIN",
+        detalle,
       });
     }
   });
-  citas.forEach((c) => push(format(c.fecha, "yyyy-MM-dd"), { id: c.id, tipo: "CITA", titulo: c.titulo }));
+  citas.forEach((c) =>
+    push(format(c.fecha, "yyyy-MM-dd"), {
+      id: c.id,
+      tipo: "CITA",
+      titulo: c.titulo,
+      detalle: {
+        rango: format(c.fecha, "d 'de' MMMM", { locale: es }),
+        hora: c.hora,
+        lugar: c.lugar,
+        descripcion: c.descripcion,
+      },
+    })
+  );
   pagos.forEach((p) =>
-    push(format(p.fechaVencimiento, "yyyy-MM-dd"), { id: p.id, tipo: "PAGO", titulo: p.concepto })
+    push(format(p.fechaVencimiento, "yyyy-MM-dd"), {
+      id: p.id,
+      tipo: "PAGO",
+      titulo: p.concepto,
+      detalle: {
+        rango: format(p.fechaVencimiento, "d 'de' MMMM", { locale: es }),
+        monto: p.monto,
+        estado: p.estado,
+      },
+    })
   );
   cumpleanios.forEach((c) => {
     const f = new Date(c.fecha);
     if (f.getMonth() === mesBase.getMonth()) {
-      const iso = format(new Date(mesBase.getFullYear(), f.getMonth(), f.getDate()), "yyyy-MM-dd");
-      push(iso, { id: c.id, tipo: "CUMPLEANOS", titulo: c.nombre });
+      const cumple = new Date(mesBase.getFullYear(), f.getMonth(), f.getDate());
+      const iso = format(cumple, "yyyy-MM-dd");
+      push(iso, {
+        id: c.id,
+        tipo: "CUMPLEANOS",
+        titulo: c.nombre,
+        detalle: { rango: format(cumple, "d 'de' MMMM", { locale: es }), descripcion: c.notas },
+      });
     }
   });
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
+import { soloFecha } from "@/lib/fecha";
 
 type Proyecto = {
   id: string;
@@ -19,8 +20,8 @@ export default function EditarProyectoForm({ proyecto }: { proyecto: Proyecto })
   const [form, setForm] = useState({
     nombre: proyecto.nombre,
     tipo: proyecto.tipo || "",
-    fechaInicio: format(new Date(proyecto.fechaInicio), "yyyy-MM-dd"),
-    fechaFin: format(new Date(proyecto.fechaFin), "yyyy-MM-dd"),
+    fechaInicio: format(soloFecha(proyecto.fechaInicio), "yyyy-MM-dd"),
+    fechaFin: format(soloFecha(proyecto.fechaFin), "yyyy-MM-dd"),
     estado: proyecto.estado,
   });
 

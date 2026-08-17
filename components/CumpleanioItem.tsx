@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { soloFecha } from "@/lib/fecha";
 
 type Cumpleanio = { id: string; nombre: string; fecha: Date | string; notas: string | null };
 
@@ -12,7 +13,7 @@ export default function CumpleanioItem({ cumpleanio }: { cumpleanio: Cumpleanio 
   const [editando, setEditando] = useState(false);
   const [form, setForm] = useState({
     nombre: cumpleanio.nombre,
-    fecha: format(new Date(cumpleanio.fecha), "yyyy-MM-dd"),
+    fecha: format(soloFecha(cumpleanio.fecha), "yyyy-MM-dd"),
     notas: cumpleanio.notas || "",
   });
 
@@ -65,7 +66,7 @@ export default function CumpleanioItem({ cumpleanio }: { cumpleanio: Cumpleanio 
     <div className="bg-white border border-noche-100 rounded-xl p-3 flex items-center justify-between">
       <span className="text-sm">{cumpleanio.nombre}</span>
       <div className="flex items-center gap-3">
-        <span className="text-xs text-noche-400">{format(new Date(cumpleanio.fecha), "d 'de' MMMM", { locale: es })}</span>
+        <span className="text-xs text-noche-400">{format(soloFecha(cumpleanio.fecha), "d 'de' MMMM", { locale: es })}</span>
         <button onClick={() => setEditando(true)} className="text-xs text-noche-400">
           Editar
         </button>

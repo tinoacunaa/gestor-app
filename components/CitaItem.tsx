@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { soloFecha } from "@/lib/fecha";
 
 type Cita = {
   id: string;
@@ -18,7 +19,7 @@ export default function CitaItem({ cita }: { cita: Cita }) {
   const [editando, setEditando] = useState(false);
   const [form, setForm] = useState({
     titulo: cita.titulo,
-    fecha: format(new Date(cita.fecha), "yyyy-MM-dd"),
+    fecha: format(soloFecha(cita.fecha), "yyyy-MM-dd"),
     hora: cita.hora || "",
     lugar: cita.lugar || "",
   });
@@ -87,7 +88,7 @@ export default function CitaItem({ cita }: { cita: Cita }) {
       <div>
         <p className="text-sm font-medium">{cita.titulo}</p>
         <p className="text-xs text-noche-400">
-          {format(new Date(cita.fecha), "d MMM yyyy", { locale: es })} {cita.hora ? `· ${cita.hora}` : ""}{" "}
+          {format(soloFecha(cita.fecha), "d MMM yyyy", { locale: es })} {cita.hora ? `· ${cita.hora}` : ""}{" "}
           {cita.lugar ? `· ${cita.lugar}` : ""}
         </p>
       </div>
