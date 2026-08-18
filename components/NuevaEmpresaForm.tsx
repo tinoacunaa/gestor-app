@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function NuevaEmpresaForm() {
   const router = useRouter();
@@ -70,13 +71,11 @@ export default function NuevaEmpresaForm() {
         onChange={(e) => setForm({ ...form, emailAdmin: e.target.value })}
         className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
       />
-      <input
+      <PasswordInput
         required
-        type="password"
         placeholder="Contraseña"
         value={form.passwordAdmin}
-        onChange={(e) => setForm({ ...form, passwordAdmin: e.target.value })}
-        className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
+        onChange={(v) => setForm({ ...form, passwordAdmin: v })}
       />
       {error && <p className="text-xs text-arcilla-400">{error}</p>}
       <div className="flex gap-2">

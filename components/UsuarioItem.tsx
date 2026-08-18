@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import PasswordInput from "@/components/PasswordInput";
 
 type Usuario = { id: string; email: string; nombre: string | null; rol: string };
 
@@ -38,12 +39,10 @@ export default function UsuarioItem({ usuario, propioId }: { usuario: Usuario; p
           onChange={(e) => setNombre(e.target.value)}
           className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
         />
-        <input
-          type="password"
+        <PasswordInput
           placeholder="Nueva contraseña (opcional)"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
+          onChange={setPassword}
         />
         <div className="flex gap-2">
           <button type="button" onClick={() => setEditando(false)} className="flex-1 border border-noche-100 rounded-lg py-2 text-sm">

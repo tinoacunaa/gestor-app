@@ -3,6 +3,7 @@ import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import TopNav from "@/components/TopNav";
 import Providers from "./providers";
+import CerrarSesionBoton from "@/components/CerrarSesionBoton";
 
 export const metadata: Metadata = {
   title: "Gestor",
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body style={{ ["--font-display" as any]: "'Fraunces'", ["--font-sans" as any]: "'Inter'" }}>
         <Providers>
+          <CerrarSesionBoton />
           <TopNav />
           <div className="max-w-md mx-auto md:max-w-4xl min-h-screen pb-20 md:pb-6 md:pt-20">
             {children}
