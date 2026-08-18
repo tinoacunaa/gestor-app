@@ -64,3 +64,19 @@ export function puedeVer(
   if (puedeEditar(usuario, registro)) return true;
   return registro.visibilidad === "EMPRESA" && !!usuario.empresaId && usuario.empresaId === registro.empresaId;
 }
+
+/**
+ * ¿Puede este usuario gestionar (editar/eliminar) la cuenta de otro usuario?
+ * - ADMIN_EMPRESA: solo usuarios de su propia empresa.
+ * - SUPER_ADMIN: cualquier usuario (típicamente los admins de empresa que creó).
+ */
+export function puedeGestionarUsuario(
+  usuario: UsuarioSesion,
+  objetivo: { id: string; empresaId: string | null }
+) {
+  if (usuario.rol === "SUPER_ADMIN") return true;
+  if (usuario.rol === "ADMIN_EMPRESA" && usuario.empresaId && usuario.empresaId === objetivo.empresaId) {
+    return true;
+  }
+  return false;
+}
