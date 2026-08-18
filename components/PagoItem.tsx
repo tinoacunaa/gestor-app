@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { soloFecha } from "@/lib/fecha";
+import SelectorVisibilidad from "@/components/SelectorVisibilidad";
 
 type Pago = {
+  visibilidad?: string;
   id: string;
   concepto: string;
   monto: number | null;
@@ -24,13 +26,16 @@ export default function PagoItem({ pago }: { pago: Pago }) {
     fechaVencimiento: format(soloFecha(pago.fechaVencimiento), "yyyy-MM-dd"),
     periodicidad: pago.periodicidad,
   });
+  const [visibilidad, setVisibilidad] = useState<"PRIVADO" | "EMPRESA">(
+    (pago.visibilidad as "EMPRESA") || "PRIVADO"
+  );
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
     await fetch(`/api/pagos/${pago.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, visibilidad }),
     });
     setEditando(false);
     router.refresh();
@@ -86,6 +91,7 @@ export default function PagoItem({ pago }: { pago: Pago }) {
           <option value="UNICA">Única</option>
           <option value="MENSUAL">Mensual</option>
         </select>
+        <SelectorVisibilidad value={visibilidad} onChange={setVisibilidad} />
         <div className="flex gap-2">
           <button type="button" onClick={() => setEditando(false)} className="flex-1 border border-noche-100 rounded-lg py-2 text-sm">
             Cancelar

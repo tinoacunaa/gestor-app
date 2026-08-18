@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 const ITEMS = [
   { href: "/hoy", label: "Hoy", icon: "☀" },
@@ -12,15 +13,24 @@ const ITEMS = [
   { href: "/pagos", label: "Pagos", icon: "$" },
 ];
 
+function useItemsConAdmin() {
+  const { data: session } = useSession();
+  const rol = (session?.user as any)?.rol;
+  if (rol === "SUPER_ADMIN") return [{ href: "/admin/empresas", label: "Empresas", icon: "⚙" }];
+  if (rol === "ADMIN_EMPRESA") return [...ITEMS, { href: "/admin/usuarios", label: "Equipo", icon: "⚙" }];
+  return ITEMS;
+}
+
 // Barra de navegación para celular: fija abajo.
 export default function BottomNav() {
   const pathname = usePathname();
+  const items = useItemsConAdmin();
   if (pathname === "/login") return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-noche-100 md:hidden z-20">
-      <div className="max-w-md mx-auto grid grid-cols-6">
-        {ITEMS.map((item) => {
+      <div className="max-w-md mx-auto grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+        {items.map((item) => {
           const active = pathname?.startsWith(item.href);
           return (
             <Link
@@ -40,4 +50,4 @@ export default function BottomNav() {
   );
 }
 
-export { ITEMS };
+export { ITEMS, useItemsConAdmin };

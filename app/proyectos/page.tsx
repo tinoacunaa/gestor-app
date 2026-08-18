@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calcularAvance } from "@/lib/avance";
+import { alcanceDatos, UsuarioSesion } from "@/lib/alcance";
 import EliminarProyectoBoton from "@/components/EliminarProyectoBoton";
 
 const SEMAFORO_COLOR: Record<string, string> = {
@@ -13,10 +14,10 @@ const SEMAFORO_COLOR: Record<string, string> = {
 
 export default async function ProyectosPage() {
   const session = await getServerSession(authOptions);
-  const usuarioId = (session!.user as any).id;
+  const usuario = session!.user as any as UsuarioSesion;
 
   const proyectos = await prisma.proyecto.findMany({
-    where: { usuarioId },
+    where: alcanceDatos(usuario),
     include: { actividades: { include: { ocurrencias: true } } },
     orderBy: { fechaInicio: "asc" },
   });
@@ -44,6 +45,11 @@ export default async function ProyectosPage() {
                   <p className="text-sm font-medium">{p.nombre}</p>
                   <span className={`w-2.5 h-2.5 rounded-full ${SEMAFORO_COLOR[estadoSemaforo]}`} />
                 </div>
+                {p.visibilidad === "EMPRESA" && (
+                  <span className="inline-block text-[10px] bg-noche-50 text-noche-400 rounded px-1.5 py-0.5 mb-1">
+                    Empresa
+                  </span>
+                )}
                 {p.tipo && <p className="text-xs text-noche-400 mb-2">{p.tipo}</p>}
 
                 <div className="relative h-1.5 bg-noche-50 rounded-full overflow-hidden mb-1">

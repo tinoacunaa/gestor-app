@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import SelectorVisibilidad from "@/components/SelectorVisibilidad";
 
 export default function NuevoPagoForm() {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [form, setForm] = useState({ concepto: "", monto: "", fechaVencimiento: "", periodicidad: "UNICA" });
+  const [visibilidad, setVisibilidad] = useState<"PRIVADO" | "EMPRESA">("PRIVADO");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     await fetch("/api/pagos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, visibilidad }),
     });
     setForm({ concepto: "", monto: "", fechaVencimiento: "", periodicidad: "UNICA" });
     setAbierto(false);
@@ -64,6 +66,7 @@ export default function NuevoPagoForm() {
         <option value="UNICA">Única</option>
         <option value="MENSUAL">Mensual</option>
       </select>
+      <SelectorVisibilidad value={visibilidad} onChange={setVisibilidad} />
       <div className="flex gap-2">
         <button type="button" onClick={() => setAbierto(false)} className="flex-1 border border-noche-100 rounded-lg py-2 text-sm">
           Cancelar

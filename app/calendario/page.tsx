@@ -13,11 +13,13 @@ import {
 } from "date-fns";
 import { es } from "date-fns/locale";
 import CalendarioGrid, { EventoCalendario } from "@/components/CalendarioGrid";
+import { alcanceDatos, UsuarioSesion } from "@/lib/alcance";
 
 export default async function CalendarioPage({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
   const sp = await searchParams;
   const session = await getServerSession(authOptions);
-  const usuarioId = (session!.user as any).id;
+  const usuario = session!.user as any as UsuarioSesion;
+  const alcance = alcanceDatos(usuario);
 
   // parseISO respeta la fecha local (1 de septiembre = 1 de septiembre).
   // new Date("2026-09-01") en cambio la lee como UTC y en Perú (UTC-5)
@@ -39,13 +41,13 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
         // No mostrar la ocurrencia si ya se completó, ni si el proyecto al
         // que pertenece está completado o cancelado.
         estado: { not: "COMPLETADO" },
-        actividad: { proyecto: { usuarioId, estado: { notIn: ["COMPLETADO", "CANCELADO"] } } },
+        actividad: { proyecto: { AND: [alcance, { estado: { notIn: ["COMPLETADO", "CANCELADO"] } }] } },
       },
       include: { actividad: { include: { proyecto: true } } },
     }),
-    prisma.cita.findMany({ where: { usuarioId, fecha: { gte: inicioGrid, lte: finGrid } } }),
-    prisma.pago.findMany({ where: { usuarioId, fechaVencimiento: { gte: inicioGrid, lte: finGrid } } }),
-    prisma.cumpleanio.findMany({ where: { usuarioId } }),
+    prisma.cita.findMany({ where: { AND: [alcance, { fecha: { gte: inicioGrid, lte: finGrid } }] } }),
+    prisma.pago.findMany({ where: { AND: [alcance, { fechaVencimiento: { gte: inicioGrid, lte: finGrid } }] } }),
+    prisma.cumpleanio.findMany({ where: alcance }),
   ]);
 
   const eventosPorDia: Record<string, EventoCalendario[]> = {};

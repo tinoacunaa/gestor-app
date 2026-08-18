@@ -1,13 +1,14 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { alcanceDatos, UsuarioSesion } from "@/lib/alcance";
 import NuevoPagoForm from "@/components/NuevoPagoForm";
 import PagoItem from "@/components/PagoItem";
 
 export default async function PagosPage() {
   const session = await getServerSession(authOptions);
-  const usuarioId = (session!.user as any).id;
-  const pagos = await prisma.pago.findMany({ where: { usuarioId }, orderBy: { fechaVencimiento: "asc" } });
+  const usuario = session!.user as any as UsuarioSesion;
+  const pagos = await prisma.pago.findMany({ where: alcanceDatos(usuario), orderBy: { fechaVencimiento: "asc" } });
 
   return (
     <div className="px-4 pt-8 pb-4">

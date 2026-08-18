@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { soloFecha } from "@/lib/fecha";
+import SelectorVisibilidad from "@/components/SelectorVisibilidad";
 
 type Cita = {
+  visibilidad?: string;
   id: string;
   titulo: string;
   fecha: Date | string;
@@ -23,13 +25,16 @@ export default function CitaItem({ cita }: { cita: Cita }) {
     hora: cita.hora || "",
     lugar: cita.lugar || "",
   });
+  const [visibilidad, setVisibilidad] = useState<"PRIVADO" | "EMPRESA">(
+    (cita.visibilidad as "EMPRESA") || "PRIVADO"
+  );
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
     await fetch(`/api/citas/${cita.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, visibilidad }),
     });
     setEditando(false);
     router.refresh();
@@ -71,6 +76,7 @@ export default function CitaItem({ cita }: { cita: Cita }) {
           onChange={(e) => setForm({ ...form, lugar: e.target.value })}
           className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
         />
+        <SelectorVisibilidad value={visibilidad} onChange={setVisibilidad} />
         <div className="flex gap-2">
           <button type="button" onClick={() => setEditando(false)} className="flex-1 border border-noche-100 rounded-lg py-2 text-sm">
             Cancelar

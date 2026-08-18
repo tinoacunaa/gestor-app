@@ -4,12 +4,13 @@ import { getDatosHoy } from "@/lib/hoy";
 import EstadoToggle from "@/components/EstadoToggle";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { UsuarioSesion } from "@/lib/alcance";
 
 export default async function HoyPage() {
   const session = await getServerSession(authOptions);
-  const usuarioId = (session!.user as any).id;
+  const usuario = session!.user as any as UsuarioSesion;
   const { ocurrenciasHoy, ocurrenciasAtrasadas, citasHoy, pagosPendientes, cumpleaniosHoy } =
-    await getDatosHoy(usuarioId);
+    await getDatosHoy(usuario);
 
   const hoyTexto = format(new Date(), "EEEE d 'de' MMMM", { locale: es });
 

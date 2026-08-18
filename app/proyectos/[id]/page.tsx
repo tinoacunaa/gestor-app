@@ -1,5 +1,8 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calcularAvance } from "@/lib/avance";
+import { alcanceDatos, UsuarioSesion } from "@/lib/alcance";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import NuevaActividadForm from "@/components/NuevaActividadForm";
@@ -8,8 +11,11 @@ import ActividadItem from "@/components/ActividadItem";
 
 export default async function ProyectoDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const proyecto = await prisma.proyecto.findUnique({
-    where: { id },
+  const session = await getServerSession(authOptions);
+  const usuario = session!.user as any as UsuarioSesion;
+
+  const proyecto = await prisma.proyecto.findFirst({
+    where: { AND: [{ id }, alcanceDatos(usuario)] },
     include: {
       actividades: {
         include: { ocurrencias: { orderBy: { fecha: "asc" } }, predecesora: true },

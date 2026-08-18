@@ -10,19 +10,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ---------- Empresas / Multi-empresa ----------
+
+enum RolUsuario {
+  SUPER_ADMIN     // crea empresas y sus admins; no ve datos operativos
+  ADMIN_EMPRESA   // crea/gestiona usuarios de su empresa; ve todos los datos de su empresa
+  USUARIO         // usuario normal de una empresa
+}
+
+// Alcance de un registro (proyecto/cita/pago/cumpleaños): privado del usuario
+// que lo creó, o compartido y visible para toda la empresa.
+enum Visibilidad {
+  PRIVADO
+  EMPRESA
+}
+
+model Empresa {
+  id        String   @id @default(cuid())
+  nombre    String
+  createdAt DateTime @default(now())
+
+  usuarios Usuario[]
+}
+
 // ---------- Usuario ----------
 
 model Usuario {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String     @id @default(cuid())
+  email     String     @unique
   password  String
   nombre    String?
-  createdAt DateTime @default(now())
+  rol       RolUsuario @default(USUARIO)
+  empresaId String?    // null solo para SUPER_ADMIN
+  empresa   Empresa?   @relation(fields: [empresaId], references: [id])
+  createdAt DateTime   @default(now())
 
   proyectos    Proyecto[]
   citas        Cita[]
   cumpleanios  Cumpleanio[]
   pagos        Pago[]
+
+  @@index([empresaId])
 }
 
 // ---------- Proyectos ----------
@@ -59,12 +87,15 @@ model Proyecto {
   fechaFin     DateTime
   estado       EstadoProyecto @default(ACTIVO)
   usuarioId    String
-  usuario      Usuario        @relation(fields: [usuarioId], references: [id])
+  usuario      Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  empresaId    String?        // empresa del usuario que lo creó (null si el usuario no tiene empresa)
+  visibilidad  Visibilidad    @default(PRIVADO)
   actividades  Actividad[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
   @@index([usuarioId])
+  @@index([empresaId])
 }
 
 model Actividad {
@@ -118,11 +149,14 @@ model Cita {
   descripcion String?
   recurrente  Boolean  @default(false)
   usuarioId   String
-  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  empresaId   String?
+  visibilidad Visibilidad @default(PRIVADO)
   createdAt   DateTime @default(now())
 
   @@index([usuarioId])
   @@index([fecha])
+  @@index([empresaId])
 }
 
 // ---------- Cumpleaños ----------
@@ -133,10 +167,13 @@ model Cumpleanio {
   fecha     DateTime // se usa día/mes; el año se recalcula en la app
   notas     String?
   usuarioId String
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  empresaId String?
+  visibilidad Visibilidad @default(PRIVADO)
   createdAt DateTime @default(now())
 
   @@index([usuarioId])
+  @@index([empresaId])
 }
 
 // ---------- Pagos ----------
@@ -155,9 +192,12 @@ model Pago {
   periodicidad      Periodicidad @default(UNICA)
   estado            EstadoPago   @default(PENDIENTE)
   usuarioId         String
-  usuario           Usuario      @relation(fields: [usuarioId], references: [id])
+  usuario           Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  empresaId         String?
+  visibilidad       Visibilidad  @default(PRIVADO)
   createdAt         DateTime     @default(now())
 
   @@index([usuarioId])
   @@index([fechaVencimiento])
+  @@index([empresaId])
 }

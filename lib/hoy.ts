@@ -1,7 +1,9 @@
 import { startOfDay, endOfDay, isSameDay, isBefore } from "date-fns";
 import { prisma } from "@/lib/prisma";
+import { alcanceDatos, UsuarioSesion } from "@/lib/alcance";
 
-export async function getDatosHoy(usuarioId: string) {
+export async function getDatosHoy(usuario: UsuarioSesion) {
+  const alcance = alcanceDatos(usuario);
   const hoy = new Date();
   const inicio = startOfDay(hoy);
   const fin = endOfDay(hoy);
@@ -12,7 +14,7 @@ export async function getDatosHoy(usuarioId: string) {
       where: {
         fecha: { lte: fin },
         OR: [{ fechaFin: { gte: inicio } }, { fechaFin: null, fecha: { gte: inicio } }],
-        actividad: { proyecto: { usuarioId } },
+        actividad: { proyecto: alcance },
       },
       include: { actividad: { include: { proyecto: true } } },
       orderBy: { fecha: "asc" },
@@ -22,20 +24,20 @@ export async function getDatosHoy(usuarioId: string) {
       where: {
         OR: [{ fechaFin: { lt: inicio } }, { fechaFin: null, fecha: { lt: inicio } }],
         estado: { not: "COMPLETADO" },
-        actividad: { proyecto: { usuarioId } },
+        actividad: { proyecto: alcance },
       },
       include: { actividad: { include: { proyecto: true } } },
       orderBy: { fecha: "asc" },
     }),
     prisma.cita.findMany({
-      where: { usuarioId, fecha: { gte: inicio, lte: fin } },
+      where: { AND: [alcance, { fecha: { gte: inicio, lte: fin } }] },
       orderBy: { hora: "asc" },
     }),
     prisma.pago.findMany({
-      where: { usuarioId, estado: "PENDIENTE", fechaVencimiento: { lte: fin } },
+      where: { AND: [alcance, { estado: "PENDIENTE", fechaVencimiento: { lte: fin } }] },
       orderBy: { fechaVencimiento: "asc" },
     }),
-    prisma.cumpleanio.findMany({ where: { usuarioId } }),
+    prisma.cumpleanio.findMany({ where: alcance }),
   ]);
 
   const cumpleaniosHoy = cumpleanios.filter((c) => {

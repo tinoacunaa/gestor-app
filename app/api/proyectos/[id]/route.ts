@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseISO } from "date-fns";
 import { generarFechasOcurrencia } from "@/lib/ocurrencias";
+import { puedeEditar, puedeVer, UsuarioSesion } from "@/lib/alcance";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
@@ -20,6 +21,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     },
   });
   if (!proyecto) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+
+  const usuario = session.user as any as UsuarioSesion;
+  if (!puedeVer(usuario, proyecto)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
   return NextResponse.json(proyecto);
 }
 
@@ -27,6 +34,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   const { id } = await params;
+  const usuario = session.user as any as UsuarioSesion;
+
+  const existente = await prisma.proyecto.findUnique({ where: { id } });
+  if (!existente) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  if (!puedeEditar(usuario, existente)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   const body = await req.json();
   const proyecto = await prisma.proyecto.update({
@@ -37,6 +51,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       estado: body.estado,
       fechaInicio: body.fechaInicio ? parseISO(body.fechaInicio) : undefined,
       fechaFin: body.fechaFin ? parseISO(body.fechaFin) : undefined,
+      visibilidad: body.visibilidad === "EMPRESA" && usuario.empresaId ? "EMPRESA" : body.visibilidad === "PRIVADO" ? "PRIVADO" : undefined,
     },
   });
 
@@ -67,6 +82,13 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   const { id } = await params;
+  const usuario = session.user as any as UsuarioSesion;
+
+  const existente = await prisma.proyecto.findUnique({ where: { id } });
+  if (!existente) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  if (!puedeEditar(usuario, existente)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   await prisma.proyecto.delete({ where: { id: id } });
   return NextResponse.json({ ok: true });

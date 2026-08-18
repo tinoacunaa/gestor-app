@@ -1,13 +1,14 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { alcanceDatos, UsuarioSesion } from "@/lib/alcance";
 import NuevaCitaForm from "@/components/NuevaCitaForm";
 import CitaItem from "@/components/CitaItem";
 
 export default async function CitasPage() {
   const session = await getServerSession(authOptions);
-  const usuarioId = (session!.user as any).id;
-  const citas = await prisma.cita.findMany({ where: { usuarioId }, orderBy: { fecha: "asc" } });
+  const usuario = session!.user as any as UsuarioSesion;
+  const citas = await prisma.cita.findMany({ where: alcanceDatos(usuario), orderBy: { fecha: "asc" } });
 
   return (
     <div className="px-4 pt-8 pb-4">

@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import SelectorVisibilidad from "@/components/SelectorVisibilidad";
 
 export default function NuevoCumpleanioForm() {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [form, setForm] = useState({ nombre: "", fecha: "", notas: "" });
+  const [visibilidad, setVisibilidad] = useState<"PRIVADO" | "EMPRESA">("PRIVADO");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     await fetch("/api/cumpleanos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, visibilidad }),
     });
     setForm({ nombre: "", fecha: "", notas: "" });
     setAbierto(false);
@@ -46,6 +48,7 @@ export default function NuevoCumpleanioForm() {
         onChange={(e) => setForm({ ...form, fecha: e.target.value })}
         className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
       />
+      <SelectorVisibilidad value={visibilidad} onChange={setVisibilidad} />
       <div className="flex gap-2">
         <button type="button" onClick={() => setAbierto(false)} className="flex-1 border border-noche-100 rounded-lg py-2 text-sm">
           Cancelar

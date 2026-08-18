@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import SelectorVisibilidad from "@/components/SelectorVisibilidad";
 
 export default function NuevoProyectoPage() {
   const router = useRouter();
   const [form, setForm] = useState({ nombre: "", tipo: "", fechaInicio: "", fechaFin: "" });
+  const [visibilidad, setVisibilidad] = useState<"PRIVADO" | "EMPRESA">("PRIVADO");
   const [enviando, setEnviando] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -14,7 +16,7 @@ export default function NuevoProyectoPage() {
     const res = await fetch("/api/proyectos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, visibilidad }),
     });
     const proyecto = await res.json();
     router.push(`/proyectos/${proyecto.id}`);
@@ -65,6 +67,7 @@ export default function NuevoProyectoPage() {
             />
           </div>
         </div>
+        <SelectorVisibilidad value={visibilidad} onChange={setVisibilidad} />
         <button
           type="submit"
           disabled={enviando}

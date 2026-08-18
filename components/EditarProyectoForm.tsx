@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { soloFecha } from "@/lib/fecha";
+import SelectorVisibilidad from "@/components/SelectorVisibilidad";
 
 type Proyecto = {
   id: string;
@@ -12,6 +13,7 @@ type Proyecto = {
   fechaInicio: Date | string;
   fechaFin: Date | string;
   estado: string;
+  visibilidad?: string;
 };
 
 export default function EditarProyectoForm({ proyecto }: { proyecto: Proyecto }) {
@@ -24,13 +26,16 @@ export default function EditarProyectoForm({ proyecto }: { proyecto: Proyecto })
     fechaFin: format(soloFecha(proyecto.fechaFin), "yyyy-MM-dd"),
     estado: proyecto.estado,
   });
+  const [visibilidad, setVisibilidad] = useState<"PRIVADO" | "EMPRESA">(
+    (proyecto.visibilidad as "EMPRESA") || "PRIVADO"
+  );
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
     await fetch(`/api/proyectos/${proyecto.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, visibilidad }),
     });
     setEditando(false);
     router.refresh();
@@ -95,6 +100,7 @@ export default function EditarProyectoForm({ proyecto }: { proyecto: Proyecto })
         <option value="COMPLETADO">Completado</option>
         <option value="CANCELADO">Cancelado</option>
       </select>
+      <SelectorVisibilidad value={visibilidad} onChange={setVisibilidad} />
       <div className="flex gap-2">
         <button type="button" onClick={() => setEditando(false)} className="flex-1 border border-noche-100 rounded-lg py-2 text-sm">
           Cancelar

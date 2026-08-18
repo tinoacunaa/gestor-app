@@ -1,13 +1,14 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { alcanceDatos, UsuarioSesion } from "@/lib/alcance";
 import NuevoCumpleanioForm from "@/components/NuevoCumpleanioForm";
 import CumpleanioItem from "@/components/CumpleanioItem";
 
 export default async function CumpleanosPage() {
   const session = await getServerSession(authOptions);
-  const usuarioId = (session!.user as any).id;
-  const cumpleanios = await prisma.cumpleanio.findMany({ where: { usuarioId } });
+  const usuario = session!.user as any as UsuarioSesion;
+  const cumpleanios = await prisma.cumpleanio.findMany({ where: alcanceDatos(usuario) });
 
   const ordenados = [...cumpleanios].sort((a, b) => {
     const da = new Date(a.fecha), db = new Date(b.fecha);
