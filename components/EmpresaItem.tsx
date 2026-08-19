@@ -73,9 +73,10 @@ function UsuarioRow({ usuario }: { usuario: Usuario }) {
     <div className="flex items-center justify-between py-1.5 border-t border-noche-100">
       <div>
         <p className="text-xs">
-          {usuario.nombre || usuario.email}
+          {usuario.nombre || "(sin nombre)"}
           {usuario.rol === "ADMIN_EMPRESA" && <span className="text-noche-400"> · admin</span>}
         </p>
+        <p className="text-[11px] text-noche-400">{usuario.email}</p>
       </div>
       <button onClick={() => setEditando(true)} className="text-xs text-noche-400 underline">
         Editar
