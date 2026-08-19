@@ -28,6 +28,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (body.nombre !== undefined) data.nombre = body.nombre || null;
   if (body.password) data.password = await bcrypt.hash(body.password, 10);
 
+  // Solo el SUPER_ADMIN puede cambiar quién es admin de una empresa.
+  if (body.rol !== undefined && gestor.rol === "SUPER_ADMIN") {
+    if (body.rol !== "ADMIN_EMPRESA" && body.rol !== "USUARIO") {
+      return NextResponse.json({ error: "Rol inválido" }, { status: 400 });
+    }
+    // No se puede dejar una empresa sin ningún admin: si se está quitando el
+    // rol de admin al ÚLTIMO admin de la empresa, se bloquea.
+    if (objetivo.rol === "ADMIN_EMPRESA" && body.rol === "USUARIO") {
+      const otrosAdmins = await prisma.usuario.count({
+        where: { empresaId: objetivo.empresaId, rol: "ADMIN_EMPRESA", id: { not: objetivo.id } },
+      });
+      if (otrosAdmins === 0) {
+        return NextResponse.json(
+          { error: "Esta empresa debe tener al menos un administrador" },
+          { status: 400 }
+        );
+      }
+    }
+    data.rol = body.rol;
+  }
+
   const usuario = await prisma.usuario.update({
     where: { id },
     data,
@@ -47,6 +68,18 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   }
   if (objetivo.id === gestor.id) {
     return NextResponse.json({ error: "No puedes eliminarte a ti mismo" }, { status: 400 });
+  }
+  // No se puede eliminar al último admin de una empresa.
+  if (objetivo.rol === "ADMIN_EMPRESA") {
+    const otrosAdmins = await prisma.usuario.count({
+      where: { empresaId: objetivo.empresaId, rol: "ADMIN_EMPRESA", id: { not: objetivo.id } },
+    });
+    if (otrosAdmins === 0) {
+      return NextResponse.json(
+        { error: "Esta empresa debe tener al menos un administrador" },
+        { status: 400 }
+      );
+    }
   }
 
   await prisma.usuario.delete({ where: { id } });
