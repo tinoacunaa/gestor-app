@@ -17,7 +17,12 @@ export type CicloOcurrencia = {
  *
  * - UNICA: un solo ciclo, con la ventana tal cual (fechaInicioActividad → fechaFinActividad).
  * - SEMANAL: un ciclo cada 7 días desde fechaInicioActividad.
- * - QUINCENAL: un ciclo cada 15 días desde fechaInicioActividad.
+ * - QUINCENAL: dos ciclos por mes, anclados al DÍA de fechaInicioActividad y
+ *   a ese mismo día +15 (ej. inicio el día 5 → ciclos los días 5 y 20 de
+ *   cada mes). A diferencia de SEMANAL/MENSUAL, NO se encadena sumando 15
+ *   días al ciclo anterior (eso desalinea el día con el paso de los meses,
+ *   por los meses de distinta duración) — cada mes se reinicia desde el
+ *   día ancla original.
  * - MENSUAL: un ciclo cada mes (mismo día) desde fechaInicioActividad.
  */
 export function generarFechasOcurrencia(
@@ -34,12 +39,26 @@ export function generarFechasOcurrencia(
     return ciclos;
   }
 
-  const avanzar =
-    periodicidad === "SEMANAL"
-      ? (d: Date) => addDays(d, 7)
-      : periodicidad === "QUINCENAL"
-      ? (d: Date) => addDays(d, 15)
-      : (d: Date) => addMonths(d, 1);
+  if (periodicidad === "QUINCENAL") {
+    let mesOffset = 0;
+    while (true) {
+      // Primer ciclo del mes: el mismo día que fechaInicioActividad, mes a mes.
+      const inicioA = addMonths(fechaInicioActividad, mesOffset);
+      if (isAfter(inicioA, fechaFinProyecto)) break;
+      ciclos.push({ fecha: inicioA, fechaFin: addDays(inicioA, duracionDias) });
+
+      // Segundo ciclo del mismo mes: ese mismo día + 15.
+      const inicioB = addDays(inicioA, 15);
+      if (!isAfter(inicioB, fechaFinProyecto)) {
+        ciclos.push({ fecha: inicioB, fechaFin: addDays(inicioB, duracionDias) });
+      }
+
+      mesOffset++;
+    }
+    return ciclos;
+  }
+
+  const avanzar = periodicidad === "SEMANAL" ? (d: Date) => addDays(d, 7) : (d: Date) => addMonths(d, 1);
 
   let inicioCiclo = fechaInicioActividad;
   // Se sigue generando mientras el INICIO del ciclo no supere la fechaFin del proyecto.
