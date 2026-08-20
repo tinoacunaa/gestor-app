@@ -64,6 +64,7 @@ enum EstadoProyecto {
 
 enum Periodicidad {
   UNICA
+  SEMANAL
   QUINCENAL
   MENSUAL
 }

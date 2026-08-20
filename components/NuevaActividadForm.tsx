@@ -64,6 +64,7 @@ export default function NuevaActividadForm({
           className="border border-noche-100 rounded-lg px-3 py-2 text-sm"
         >
           <option value="UNICA">Única</option>
+          <option value="SEMANAL">Semanal</option>
           <option value="QUINCENAL">Quincenal</option>
           <option value="MENSUAL">Mensual</option>
         </select>

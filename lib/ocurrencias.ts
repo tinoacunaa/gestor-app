@@ -16,6 +16,7 @@ export type CicloOcurrencia = {
  *   su fecha de inicio no supere la fecha de fin del proyecto.
  *
  * - UNICA: un solo ciclo, con la ventana tal cual (fechaInicioActividad → fechaFinActividad).
+ * - SEMANAL: un ciclo cada 7 días desde fechaInicioActividad.
  * - QUINCENAL: un ciclo cada 15 días desde fechaInicioActividad.
  * - MENSUAL: un ciclo cada mes (mismo día) desde fechaInicioActividad.
  */
@@ -33,7 +34,12 @@ export function generarFechasOcurrencia(
     return ciclos;
   }
 
-  const avanzar = periodicidad === "QUINCENAL" ? (d: Date) => addDays(d, 15) : (d: Date) => addMonths(d, 1);
+  const avanzar =
+    periodicidad === "SEMANAL"
+      ? (d: Date) => addDays(d, 7)
+      : periodicidad === "QUINCENAL"
+      ? (d: Date) => addDays(d, 15)
+      : (d: Date) => addMonths(d, 1);
 
   let inicioCiclo = fechaInicioActividad;
   // Se sigue generando mientras el INICIO del ciclo no supere la fechaFin del proyecto.
