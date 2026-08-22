@@ -7,7 +7,7 @@ import SelectorVisibilidad from "@/components/SelectorVisibilidad";
 export default function NuevaCitaForm() {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
-  const [form, setForm] = useState({ titulo: "", fecha: "", hora: "", lugar: "" });
+  const [form, setForm] = useState({ titulo: "", fecha: "", hora: "", lugar: "", periodicidad: "UNICA" });
   const [visibilidad, setVisibilidad] = useState<"PRIVADO" | "EMPRESA">("PRIVADO");
 
   async function onSubmit(e: React.FormEvent) {
@@ -17,7 +17,7 @@ export default function NuevaCitaForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, visibilidad }),
     });
-    setForm({ titulo: "", fecha: "", hora: "", lugar: "" });
+    setForm({ titulo: "", fecha: "", hora: "", lugar: "", periodicidad: "UNICA" });
     setAbierto(false);
     router.refresh();
   }
@@ -62,6 +62,20 @@ export default function NuevaCitaForm() {
         onChange={(e) => setForm({ ...form, lugar: e.target.value })}
         className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
       />
+      <div>
+        <label className="block text-xs text-noche-400 mb-1">Repetir</label>
+        <select
+          value={form.periodicidad}
+          onChange={(e) => setForm({ ...form, periodicidad: e.target.value })}
+          className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
+        >
+          <option value="UNICA">No se repite</option>
+          <option value="SEMANAL">Cada semana</option>
+          <option value="QUINCENAL">Cada quincena</option>
+          <option value="MENSUAL">Cada mes</option>
+          <option value="ANUAL">Cada año</option>
+        </select>
+      </div>
       <SelectorVisibilidad value={visibilidad} onChange={setVisibilidad} />
       <div className="flex gap-2">
         <button type="button" onClick={() => setAbierto(false)} className="flex-1 border border-noche-100 rounded-lg py-2 text-sm">

@@ -5,6 +5,7 @@ import EstadoToggle from "@/components/EstadoToggle";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { UsuarioSesion } from "@/lib/alcance";
+import { soloFecha } from "@/lib/fecha";
 
 export default async function HoyPage() {
   const session = await getServerSession(authOptions);
@@ -36,7 +37,9 @@ export default async function HoyPage() {
                 <EstadoToggle ocurrenciaId={o.id} estadoInicial={o.estado as any} />
                 <div className="min-w-0">
                   <p className="text-sm truncate">{o.actividad.nombre}</p>
-                  <p className="text-xs text-noche-400 truncate">{o.actividad.proyecto.nombre}</p>
+                  <p className="text-xs text-noche-400 truncate">
+                    {o.actividad.proyecto.nombre} · {format(soloFecha(o.fecha), "d MMM", { locale: es })}
+                  </p>
                 </div>
               </li>
             ))}
@@ -56,7 +59,7 @@ export default async function HoyPage() {
                 <div className="min-w-0">
                   <p className="text-sm truncate">{o.actividad.nombre}</p>
                   <p className="text-xs text-noche-400 truncate">
-                    {o.actividad.proyecto.nombre}
+                    {o.actividad.proyecto.nombre} · {format(soloFecha(o.fecha), "d MMM", { locale: es })}
                     {o.actividad.hora ? ` · ${o.actividad.hora}` : ""}
                   </p>
                 </div>

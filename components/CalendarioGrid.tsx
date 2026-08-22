@@ -43,6 +43,7 @@ export default function CalendarioGrid({
     new Set(TIPOS.map((t) => t.key))
   );
   const [seleccionado, setSeleccionado] = useState<EventoCalendario | null>(null);
+  const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(null);
 
   function alternar(tipo: EventoCalendario["tipo"]) {
     setActivos((prev) => {
@@ -106,13 +107,64 @@ export default function CalendarioGrid({
                   );
                 })}
                 {eventos.length > 3 && (
-                  <p className="text-[10px] text-noche-400">+{eventos.length - 3} más</p>
+                  <button
+                    onClick={() => setDiaSeleccionado(fechaIso)}
+                    className="text-[10px] text-noche-400 underline"
+                  >
+                    +{eventos.length - 3} más
+                  </button>
                 )}
               </div>
             </div>
           );
         })}
       </div>
+
+      {diaSeleccionado && (
+        <div
+          className="fixed inset-0 bg-noche-900/40 flex items-end md:items-center justify-center z-50 p-0 md:p-4"
+          onClick={() => setDiaSeleccionado(null)}
+        >
+          <div
+            className="bg-white rounded-t-2xl md:rounded-2xl p-5 w-full md:max-w-sm max-h-[75vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-display text-lg mb-3">
+              {new Date(diaSeleccionado + "T00:00:00").toLocaleDateString("es-PE", {
+                day: "numeric",
+                month: "long",
+              })}
+            </h2>
+            <div className="space-y-1.5">
+              {(eventosPorDia[diaSeleccionado] || [])
+                .filter((e) => activos.has(e.tipo))
+                .map((e) => {
+                  const t = TIPOS.find((x) => x.key === e.tipo)!;
+                  const prefijo = e.marcador === "INICIO" ? "▶ " : e.marcador === "FIN" ? "■ " : "";
+                  return (
+                    <button
+                      key={`${e.id}-${e.marcador || ""}`}
+                      onClick={() => {
+                        setSeleccionado(e);
+                        setDiaSeleccionado(null);
+                      }}
+                      className={`w-full text-left text-xs truncate rounded-lg px-2 py-1.5 ${t.bg} ${t.text}`}
+                    >
+                      {prefijo}
+                      {e.titulo}
+                    </button>
+                  );
+                })}
+            </div>
+            <button
+              onClick={() => setDiaSeleccionado(null)}
+              className="w-full mt-4 border border-noche-100 rounded-lg py-2 text-sm"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
 
       {seleccionado && (
         <div

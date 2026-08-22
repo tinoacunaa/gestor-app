@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       hora: body.hora || null,
       lugar: body.lugar || null,
       descripcion: body.descripcion || null,
-      recurrente: !!body.recurrente,
+      periodicidad: body.periodicidad || "UNICA",
       usuarioId: usuario.id,
       empresaId: usuario.empresaId,
       visibilidad: body.visibilidad === "EMPRESA" && usuario.empresaId ? "EMPRESA" : "PRIVADO",

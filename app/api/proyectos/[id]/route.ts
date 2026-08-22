@@ -43,6 +43,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const body = await req.json();
+  const nuevaFechaFin = body.fechaFin ? parseISO(body.fechaFin) : undefined;
+  // Solo regeneramos ocurrencias si la fechaFin del proyecto REALMENTE cambió
+  // (no basta con que venga en el body: el formulario de edición la manda
+  // siempre, así el usuario solo haya tocado otro campo como "visibilidad").
+  const fechaFinCambio = nuevaFechaFin && nuevaFechaFin.getTime() !== existente.fechaFin.getTime();
+
   const proyecto = await prisma.proyecto.update({
     where: { id: id },
     data: {
@@ -50,7 +56,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       tipo: body.tipo,
       estado: body.estado,
       fechaInicio: body.fechaInicio ? parseISO(body.fechaInicio) : undefined,
-      fechaFin: body.fechaFin ? parseISO(body.fechaFin) : undefined,
+      fechaFin: nuevaFechaFin,
       visibilidad: body.visibilidad === "EMPRESA" && usuario.empresaId ? "EMPRESA" : body.visibilidad === "PRIVADO" ? "PRIVADO" : undefined,
     },
   });
@@ -59,7 +65,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   // mensual) deben re-generar sus ciclos hasta la nueva fecha límite — es
   // justo el bug que esto arregla: que dejaran de aparecer en el calendario
   // porque quedaban amarradas a un límite viejo.
-  if (body.fechaFin) {
+  if (fechaFinCambio) {
     const actividades = await prisma.actividad.findMany({ where: { proyectoId: proyecto.id } });
     for (const actividad of actividades) {
       await prisma.ocurrenciaActividad.deleteMany({ where: { actividadId: actividad.id } });

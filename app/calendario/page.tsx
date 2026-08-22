@@ -14,6 +14,7 @@ import {
 import { es } from "date-fns/locale";
 import CalendarioGrid, { EventoCalendario } from "@/components/CalendarioGrid";
 import { alcanceDatos, UsuarioSesion } from "@/lib/alcance";
+import { fechasCitaEnRango } from "@/lib/citaOcurrencias";
 
 export default async function CalendarioPage({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
   const sp = await searchParams;
@@ -45,7 +46,14 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
       },
       include: { actividad: { include: { proyecto: true } } },
     }),
-    prisma.cita.findMany({ where: { AND: [alcance, { fecha: { gte: inicioGrid, lte: finGrid } }] } }),
+    // Trae la cita si su fecha ancla cae en el rango visible, O si es
+    // recurrente (en cuyo caso puede repetirse en este rango aunque su
+    // fecha ancla original sea de hace meses).
+    prisma.cita.findMany({
+      where: {
+        AND: [alcance, { OR: [{ fecha: { gte: inicioGrid, lte: finGrid } }, { periodicidad: { not: "UNICA" } }] }],
+      },
+    }),
     prisma.pago.findMany({ where: { AND: [alcance, { fechaVencimiento: { gte: inicioGrid, lte: finGrid } }] } }),
     prisma.cumpleanio.findMany({ where: alcance }),
   ]);
@@ -89,19 +97,22 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
       });
     }
   });
-  citas.forEach((c) =>
-    push(format(c.fecha, "yyyy-MM-dd"), {
-      id: c.id,
-      tipo: "CITA",
-      titulo: c.titulo,
-      detalle: {
-        rango: format(c.fecha, "d 'de' MMMM", { locale: es }),
-        hora: c.hora,
-        lugar: c.lugar,
-        descripcion: c.descripcion,
-      },
-    })
-  );
+  citas.forEach((c) => {
+    const fechas = fechasCitaEnRango(c.fecha, c.periodicidad, inicioGrid, finGrid);
+    fechas.forEach((f) =>
+      push(format(f, "yyyy-MM-dd"), {
+        id: `${c.id}-${format(f, "yyyy-MM-dd")}`,
+        tipo: "CITA",
+        titulo: c.titulo,
+        detalle: {
+          rango: format(f, "d 'de' MMMM", { locale: es }),
+          hora: c.hora,
+          lugar: c.lugar,
+          descripcion: c.descripcion,
+        },
+      })
+    );
+  });
   pagos.forEach((p) =>
     push(format(p.fechaVencimiento, "yyyy-MM-dd"), {
       id: p.id,

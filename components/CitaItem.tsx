@@ -14,6 +14,15 @@ type Cita = {
   fecha: Date | string;
   hora: string | null;
   lugar: string | null;
+  periodicidad?: string;
+};
+
+const ETIQUETA_PERIODICIDAD: Record<string, string> = {
+  UNICA: "No se repite",
+  SEMANAL: "Cada semana",
+  QUINCENAL: "Cada quincena",
+  MENSUAL: "Cada mes",
+  ANUAL: "Cada año",
 };
 
 export default function CitaItem({ cita }: { cita: Cita }) {
@@ -24,6 +33,7 @@ export default function CitaItem({ cita }: { cita: Cita }) {
     fecha: format(soloFecha(cita.fecha), "yyyy-MM-dd"),
     hora: cita.hora || "",
     lugar: cita.lugar || "",
+    periodicidad: cita.periodicidad || "UNICA",
   });
   const [visibilidad, setVisibilidad] = useState<"PRIVADO" | "EMPRESA">(
     (cita.visibilidad as "EMPRESA") || "PRIVADO"
@@ -76,6 +86,20 @@ export default function CitaItem({ cita }: { cita: Cita }) {
           onChange={(e) => setForm({ ...form, lugar: e.target.value })}
           className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
         />
+        <div>
+          <label className="block text-xs text-noche-400 mb-1">Repetir</label>
+          <select
+            value={form.periodicidad}
+            onChange={(e) => setForm({ ...form, periodicidad: e.target.value })}
+            className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="UNICA">No se repite</option>
+            <option value="SEMANAL">Cada semana</option>
+            <option value="QUINCENAL">Cada quincena</option>
+            <option value="MENSUAL">Cada mes</option>
+            <option value="ANUAL">Cada año</option>
+          </select>
+        </div>
         <SelectorVisibilidad value={visibilidad} onChange={setVisibilidad} />
         <div className="flex gap-2">
           <button type="button" onClick={() => setEditando(false)} className="flex-1 border border-noche-100 rounded-lg py-2 text-sm">
@@ -97,6 +121,9 @@ export default function CitaItem({ cita }: { cita: Cita }) {
           {format(soloFecha(cita.fecha), "d MMM yyyy", { locale: es })} {cita.hora ? `· ${cita.hora}` : ""}{" "}
           {cita.lugar ? `· ${cita.lugar}` : ""}
         </p>
+        {cita.periodicidad && cita.periodicidad !== "UNICA" && (
+          <p className="text-[11px] text-noche-400">↻ {ETIQUETA_PERIODICIDAD[cita.periodicidad]}</p>
+        )}
       </div>
       <div className="flex gap-2 shrink-0">
         <button onClick={() => setEditando(true)} className="text-xs text-noche-400">

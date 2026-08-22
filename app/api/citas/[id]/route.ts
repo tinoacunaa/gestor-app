@@ -24,7 +24,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       hora: body.hora || null,
       lugar: body.lugar || null,
       descripcion: body.descripcion || null,
-      recurrente: !!body.recurrente,
+      periodicidad: body.periodicidad || undefined,
       visibilidad: body.visibilidad === "EMPRESA" && usuario.empresaId ? "EMPRESA" : body.visibilidad === "PRIVADO" ? "PRIVADO" : undefined,
     },
   });

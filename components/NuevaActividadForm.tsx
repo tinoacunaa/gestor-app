@@ -78,20 +78,26 @@ export default function NuevaActividadForm({
         </select>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <input
-          type="date"
-          required
-          value={form.fechaInicio}
-          onChange={(e) => setForm({ ...form, fechaInicio: e.target.value })}
-          className="border border-noche-100 rounded-lg px-3 py-2 text-sm"
-        />
-        <input
-          type="date"
-          required
-          value={form.fechaFin}
-          onChange={(e) => setForm({ ...form, fechaFin: e.target.value })}
-          className="border border-noche-100 rounded-lg px-3 py-2 text-sm"
-        />
+        <div>
+          <label className="block text-xs text-noche-400 mb-1">Fecha de inicio</label>
+          <input
+            type="date"
+            required
+            value={form.fechaInicio}
+            onChange={(e) => setForm({ ...form, fechaInicio: e.target.value })}
+            className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-noche-400 mb-1">Fecha de fin</label>
+          <input
+            type="date"
+            required
+            value={form.fechaFin}
+            onChange={(e) => setForm({ ...form, fechaFin: e.target.value })}
+            className="w-full border border-noche-100 rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
       </div>
       <input
         type="time"

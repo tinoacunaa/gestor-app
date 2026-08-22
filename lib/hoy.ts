@@ -1,6 +1,7 @@
 import { startOfDay, endOfDay, isSameDay, isBefore } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { alcanceDatos, UsuarioSesion } from "@/lib/alcance";
+import { fechasCitaEnRango } from "@/lib/citaOcurrencias";
 
 export async function getDatosHoy(usuario: UsuarioSesion) {
   const alcance = alcanceDatos(usuario);
@@ -29,8 +30,10 @@ export async function getDatosHoy(usuario: UsuarioSesion) {
       include: { actividad: { include: { proyecto: true } } },
       orderBy: { fecha: "asc" },
     }),
+    // Trae la cita si su fecha ancla es hoy, O si es recurrente (puede caer
+    // hoy aunque su fecha ancla original sea de hace meses).
     prisma.cita.findMany({
-      where: { AND: [alcance, { fecha: { gte: inicio, lte: fin } }] },
+      where: { AND: [alcance, { OR: [{ fecha: { gte: inicio, lte: fin } }, { periodicidad: { not: "UNICA" } }] }] },
       orderBy: { hora: "asc" },
     }),
     prisma.pago.findMany({
@@ -45,5 +48,12 @@ export async function getDatosHoy(usuario: UsuarioSesion) {
     return f.getDate() === hoy.getDate() && f.getMonth() === hoy.getMonth();
   });
 
-  return { ocurrenciasHoy, ocurrenciasAtrasadas, citasHoy, pagosPendientes, cumpleaniosHoy };
+  // Filtra las citas cuyas recurrencias realmente caigan hoy (las UNICA ya
+  // vinieron filtradas por fecha desde la consulta; las recurrentes hay que
+  // verificarlas expandiendo sus ciclos).
+  const citasHoyFiltradas = citasHoy.filter(
+    (c) => fechasCitaEnRango(c.fecha, c.periodicidad, inicio, fin).length > 0
+  );
+
+  return { ocurrenciasHoy, ocurrenciasAtrasadas, citasHoy: citasHoyFiltradas, pagosPendientes, cumpleaniosHoy };
 }

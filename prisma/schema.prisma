@@ -69,6 +69,14 @@ enum Periodicidad {
   MENSUAL
 }
 
+enum PeriodicidadCita {
+  UNICA
+  SEMANAL
+  QUINCENAL
+  MENSUAL
+  ANUAL
+}
+
 enum TipoSeguimiento {
   ESTADO      // check de 3 posiciones: pendiente / proceso / completado
   PORCENTAJE  // slider 0-100
@@ -148,7 +156,7 @@ model Cita {
   hora        String?
   lugar       String?
   descripcion String?
-  recurrente  Boolean  @default(false)
+  periodicidad PeriodicidadCita @default(UNICA)
   usuarioId   String
   usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   empresaId   String?
